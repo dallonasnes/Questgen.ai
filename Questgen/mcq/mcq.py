@@ -143,6 +143,37 @@ def filter_phrases(phrase_keys,max,normalized_levenshtein ):
                 break
     return filtered_phrases
 
+def lang_code_to_lang(lang_code):
+    if lang_code == 'en':
+        return 'english'
+    else:
+        raise Exception("Language code transformation not yet implemented")
+
+def get_nouns_verbs_nums_multipartite(text, lang_code='en', n=10):
+    out = []
+
+    extractor = pke.unsupervised.MultipartiteRank()
+    extractor.load_document(input=text, language=lang_code)
+    pos = {'PROPN', 'NOUN', 'VERB', 'NUM'}
+    stoplist = list(string.punctuation)
+    stoplist += stopwords.words(lang_code_to_lang(lang_code))
+    extractor.candidate_selection(pos=pos, stoplist=stoplist)
+    # 4. build the Multipartite graph and rank candidates using random walk,
+    #    alpha controls the weight adjustment mechanism, see TopicRank for
+    #    threshold/method parameters.
+    try:
+        extractor.candidate_weighting(alpha=1.1,
+                                      threshold=0.75,
+                                      method='average')
+    except:
+        return out
+
+    keyphrases = extractor.get_n_best(n)
+
+    for key in keyphrases:
+        out.append(key[0])
+
+    return out
 
 def get_nouns_multipartite(text):
     out = []
@@ -193,16 +224,16 @@ def get_keywords(nlp,text,max_keywords,s2v,fdist,normalized_levenshtein,no_of_se
     doc = nlp(text)
     max_keywords = int(max_keywords)
 
-    keywords = get_nouns_multipartite(text)
+    keywords = get_nouns_verbs_nums_multipartite(text=text, lang_code='en', n=10) #get_nouns_multipartite(text)
     keywords = sorted(keywords, key=lambda x: fdist[x])
-    keywords = filter_phrases(keywords, max_keywords,normalized_levenshtein )
+    keywords = filter_phrases(keywords, max_keywords, normalized_levenshtein)
 
     phrase_keys = get_phrases(doc)
-    filtered_phrases = filter_phrases(phrase_keys, max_keywords,normalized_levenshtein )
+    filtered_phrases = filter_phrases(phrase_keys, max_keywords, normalized_levenshtein)
 
     total_phrases = keywords + filtered_phrases
 
-    total_phrases_filtered = filter_phrases(total_phrases, min(max_keywords, 2*no_of_sentences),normalized_levenshtein )
+    total_phrases_filtered = filter_phrases(total_phrases, min(max_keywords, 2*no_of_sentences), normalized_levenshtein)
 
 
     answers = []
@@ -258,7 +289,7 @@ def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec
      
         if len(individual_question["options"])>0:
             output_array["questions"].append(individual_question)
-
+    
     return output_array
 
 def generate_normal_questions(keyword_sent_mapping,device,tokenizer,model):  #for normal one word questions

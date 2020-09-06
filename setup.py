@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='Questgen',
-      version='1.0.0',
+      version='1.0.1',
       description='Question generator from any text',
       author='Questgen contributors',
       author_email='vaibhavtiwarifu@gmail.com',
@@ -22,7 +22,7 @@ setup(name='Questgen',
            'unidecode==1.1.1',
            'future==0.18.2',
            'joblib==0.14.1',
-           'spacy==2.2.4',
+           'spacy==2.3.0',
            'pytz==2020.1',
            'python-dateutil==2.8.1',
            'boto3==1.14.40',

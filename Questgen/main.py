@@ -35,7 +35,7 @@ import time
 
 class QGen:
     
-    def __init__(self):
+    def __init__(self, lang_code='en', max_questions=20):
         
         
         self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
@@ -45,13 +45,20 @@ class QGen:
         # model.eval()
         self.device = device
         self.model = model
-        self.nlp = spacy.load('en_core_web_sm')
+        self.nlp = self.try_load_spacy_model(lang_code)
+        self.max_questions = int(max_questions)
 
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        self.s2v = Sense2Vec().from_disk('/Users/dev/Develop/text-to-anki/backend/src/Questgen.ai/Questgen.ai/Questgen/s2v_old')
 
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)
+    
+    def try_load_spacy_model(self, lang_code):
+        if 'en' in lang_code:
+            return spacy.load('en_core_web_sm')
+        else:
+            raise Exception("Language model not implemented yet")
         
     def set_seed(self,seed):
         numpy.random.seed(seed)
@@ -63,7 +70,7 @@ class QGen:
         start = time.time()
         inp = {
             "input_text": payload.get("input_text"),
-            "max_questions": payload.get("max_questions", 4)
+            "max_questions": payload.get("max_questions", self.max_questions)
         }
 
         text = inp['input_text']
